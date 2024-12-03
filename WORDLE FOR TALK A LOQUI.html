@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wordle!!</title>
+  <style>
+   body {
+  font-family: 'Arial', sans-serif;
+  background: linear-gradient(to right, #ff7e5f, #feb47b);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.game-container {
+  text-align: center;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  width: 400px; /* Set a fixed width */
+  max-width: 90%; /* Allow some flexibility on larger screens */
+  min-height: 400px; /* Prevent it from being too small */
+}
+
+.board {
+  display: grid;
+  grid-gap: 5px;
+  margin: 20px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(var(--word-length), 1fr);
+}
+
+.board input {
+  width: 100%;
+  height: 60px;
+  text-align: center;
+  font-size: 28px;
+  border: 2px solid #ccc;
+  border-radius: 5px;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.board input:focus {
+  background-color: #f1f1f1;
+  border-color: #ff7e5f;
+}
+
+.correct {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.present {
+  background-color: #FFEB3B;
+}
+
+.absent {
+  background-color: #B0BEC5;
+}
+
+button {
+  padding: 12px 24px;
+  font-size: 18px;
+  background-color: #008CBA;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #006F8E;
+}
+
+.keyboard {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 5px;
+  margin-top: 20px;
+}
+
+.key {
+  padding: 15px;
+  background-color: #e0e0e0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.key:hover {
+  background-color: #d1d1d1;
+}
+
+  </style>
+</head>
+<body>
+
+<div class="game-container">
+  <h1>Wordle Game</h1>
+  <div class="board" id="board"></div>
+  <button id="checkGuessButton">Check Guess</button>
+  <p id="message"></p>
+  <div class="keyboard" id="keyboard"></div>
+  <button id="newRoundButton" style="display:none;">New Round</button>
+</div>
+
+<script>
+  const fourLetterWords = ["html", "bold", "tags", "body", "text", "code", "head", "mark"];
+  const fiveLetterWords = ["style", "input", "basic", "texts"];
+  const sixLetterWords = ["marked", "delete", "format", "design", "insert", "italic"];
+  
+  let wordLength;
+  let selectedWord;
+  let attempts;
+
+  function startNewGame() {
+    attempts = 0;
+    wordLength = [4, 5, 6][Math.floor(Math.random() * 3)];
+    selectedWord = getRandomWord(wordLength);
+    createBoard();
+    document.getElementById("message").innerText = "";
+    document.getElementById("newRoundButton").style.display = "none";
+  }
+
+  function getRandomWord(length) {
+    if (length === 4) {
+      return fourLetterWords[Math.floor(Math.random() * fourLetterWords.length)];
+    } else if (length === 5) {
+      return fiveLetterWords[Math.floor(Math.random() * fiveLetterWords.length)];
+    } else {
+      return sixLetterWords[Math.floor(Math.random() * sixLetterWords.length)];
+    }
+  }
+
+  function createBoard() {
+    const board = document.getElementById("board");
+    board.innerHTML = ''; // Clear any existing board
+    board.style.setProperty('--word-length', wordLength); // Set the number of columns based on word length
+    
+    for (let i = 0; i < 6; i++) {
+      const row = document.createElement("div");
+      row.classList.add('row');
+      
+      for (let j = 0; j < wordLength; j++) {
+        const input = document.createElement("input");
+        input.maxLength = 1;
+        input.addEventListener("input", handleInput);
+        input.addEventListener("keydown", handleKeydown);
+        row.appendChild(input);
+      }
+      board.appendChild(row);
+    }
+  }
+
+  function handleInput(event) {
+    const currentInput = event.target;
+    const row = currentInput.parentElement;
+    const inputs = Array.from(row.children);
+    
+    if (currentInput.value) {
+      const nextInput = inputs[inputs.indexOf(currentInput) + 1];
+      if (nextInput) nextInput.focus();
+    }
+  }
+
+  function handleKeydown(event) {
+    if (event.key === "Backspace") {
+      const currentInput = event.target;
+      const row = currentInput.parentElement;
+      const inputs = Array.from(row.children);
+
+      const prevInput = inputs[inputs.indexOf(currentInput) - 1];
+      if (prevInput) prevInput.focus();
+    }
+  }
+
+  function checkGuess() {
+    const rows = document.querySelectorAll('.row');
+    const currentRow = rows[attempts];
+    const guess = Array.from(currentRow.children).map(input => input.value).join('');
+
+    if (guess.length !== wordLength) {
+      document.getElementById("message").innerText = "Please enter a complete word.";
+      return;
+    }
+
+    attempts++;
+    for (let i = 0; i < wordLength; i++) {
+      const input = currentRow.children[i];
+      if (guess[i] === selectedWord[i]) {
+        input.classList.add('correct');
+      } else if (selectedWord.includes(guess[i])) {
+        input.classList.add('present');
+      } else {
+        input.classList.add('absent');
+      }
+    }
+
+    if (guess === selectedWord) {
+      document.getElementById("message").innerText = "Congratulations! You've guessed the word!";
+      document.getElementById("newRoundButton").style.display = "block";
+    } else if (attempts >= 6) {
+      document.getElementById("message").innerText = `Game over! The word was: ${selectedWord}`;
+      document.getElementById("newRoundButton").style.display = "block";
+    }
+  }
+
+  document.getElementById("checkGuessButton").onclick = checkGuess;
+  document.getElementById("newRoundButton").onclick = startNewGame;
+
+  startNewGame(); // Start the first game
+</script>
+
+</body>
+</html>
